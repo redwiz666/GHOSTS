@@ -452,11 +452,11 @@ namespace Ghosts.Client.Handlers
             {
                 if (fname == null)
                 {
-                    this.NotepadProcess = Process.Start("notepad.exe");
+                    this.NotepadProcess = ProcessManager.CreateProcess("notepad.exe", null, "explorer",false).Process;
                 }
                 else
                 {
-                    this.NotepadProcess = Process.Start("notepad.exe", fname);
+                    this.NotepadProcess = ProcessManager.CreateProcess("notepad.exe", fname, "explorer", false).Process;
                 }
                 if (this.NotepadProcess == null)
                 {
