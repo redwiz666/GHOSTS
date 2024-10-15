@@ -3,6 +3,7 @@
 using System;
 using System.Diagnostics;
 using System.Threading;
+using Ghosts.Client.Infrastructure;
 using Ghosts.Domain;
 using Ghosts.Domain.Code;
 
@@ -12,6 +13,7 @@ namespace Ghosts.Client.Handlers
     {
         public int executionprobability = 100;
         public int jitterfactor { get; set; } = 0;  //used with Jitter.JitterFactorDelay
+        public string ParentProcess { get; set; } = string.Empty;
         public Cmd(TimelineHandler handler)
         {
             try
@@ -50,6 +52,10 @@ namespace Ghosts.Client.Handlers
             if (handler.HandlerArgs.ContainsKey("delay-jitter"))
             {
                 jitterfactor = Jitter.JitterFactorParse(handler.HandlerArgs["delay-jitter"].ToString());
+            }
+            if (handler.HandlerArgs.ContainsKey("parent-process"))
+            {
+                ParentProcess = handler.HandlerArgs["parent-process"].ToString();
             }
             foreach (var timelineEvent in handler.TimeLineEvents)
             {
@@ -95,29 +101,8 @@ namespace Ghosts.Client.Handlers
 
         public void Command(TimelineHandler handler, TimelineEvent timelineEvent, string command)
         {
-            var results = Command(command);
+            var results = ProcessManager.CreateProcess("cmd.exe", "/c " + command, ParentProcess).Output;
             Report(new ReportItem { Handler = handler.HandlerType.ToString(), Command = command, Trackable = timelineEvent.TrackableId, Result = results });
-        }
-
-        public static string Command(string command)
-        {
-            Log.Trace($"Spawning cmd.exe with command {command}");
-
-            var processStartInfo = new ProcessStartInfo("cmd", "/c " + command);
-            processStartInfo.RedirectStandardOutput = true;
-            processStartInfo.UseShellExecute = false;
-            processStartInfo.CreateNoWindow = false;
-            
-            var process = new Process();
-            process.StartInfo = processStartInfo;
-            process.Start();
-            
-            var output = process.StandardOutput.ReadToEnd();
-            process.WaitForExit();
-            // Console.Write(output);
-            Thread.Sleep(1000);
-            
-            return output;
         }
     }
 }
